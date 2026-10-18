@@ -1,0 +1,97 @@
+SIMULATION: simaws is a local stand-in for AWS. No cloud API is called. The model runs on a local Ollama server.
+account=000000000000 region=local cloud-model=qwen3:8b endpoint=http://host.docker.internal:11434
+input: /root/insurance-deployment/deploy/input/test_input.json
+input sha256: 5b5917e161317c2d96566ee61dbc347536bc18454801d7add33301b50759a121
+
+=== Phase 1: validate network placement (before anything is deployed) ===
+  subnet subnet-app-private 10.0.1.0/24 public=False - Fargate task running the risk service
+  subnet subnet-model-private 10.0.2.0/24 public=False - Model endpoint stand-in (Ollama), reachable only from the app subnet
+  sg-risk-task ingress=[] egress=[{"protocol": "tcp", "port": 11434, "cidr": "10.0.2.0/24", "why": "the only thing the task talks to: the model endpoint"}]
+  sg-model-endpoint ingress=[{"protocol": "tcp", "port": 11434, "source_sg": "sg-risk-task", "why": "accept model calls only from the risk task"}] egress=[]
+  network validator: PASS (private subnet, zero ingress, one egress tcp/11434 to model subnet)
+
+=== Phase 2: IAM: create dedicated role, lint policy, attach, confirm ===
+  created role arn:simaws:iam::000000000000:role/risk-service-task (trust: ecs-tasks.amazonaws.com only)
+  linter correctly REJECTED a wildcard/unjustified variant:
+policy rejected by least-privilege linter:
+  - statement[1] (PullOwnImageOnly): wildcard action 'ecr:*'
+  - statement[2] (WriteOwnLogs): justification missing or shorter than 30 characters
+  linter PASS; attached policy risk-service-least-privilege to risk-service-task
+    EcrAuthToken: ['ecr:GetAuthorizationToken'] on ['arn:simaws:ecr:local:000000000000:registry/default']
+    PullOwnImageOnly: ['ecr:BatchGetImage', 'ecr:GetDownloadUrlForLayer'] on ['arn:simaws:ecr:local:000000000000:repository/risk-service']
+    WriteOwnLogs: ['logs:CreateLogStream', 'logs:PutLogEvents'] on ['arn:simaws:logs:local:000000000000:log-group:/simaws/risk-service']
+    InvokeManagedModel: ['bedrock:InvokeModel'] on ['arn:simaws:bedrock:local::foundation-model/managed-endpoint-standin']
+
+=== Phase 3: registry: create repository, build image archive, push ===
+  docker not used: deterministic source archive with the same sha256 digest discipline
+  sha256 5990fce992a303ad9027e9c70ee6d22349172e61b11c9c75f76d21e76cd9abf2  src/underwriting/agents/risk.py
+  sha256 eba9ee27b5766c6caeeb9ded858989d99b802f5f69fdcf725957cfcc85f0da70  src/underwriting/agents/_base.py
+  sha256 f6076f3fd66fc34fe3c7eb9153d3bb0b1a3b122a488e5bc62ed9ee8e44bde47c  src/underwriting/llm.py
+  sha256 d02c54f3cf6a4d9d981e9db75d13386604ddc1fead3cff7dbbbdd945e692207c  src/underwriting/models.py
+  pushed arn:simaws:ecr:local:000000000000:repository/risk-service:week9  size=30720 bytes
+  image digest sha256:5727c2c535d3020ee98271c36d3877c732384edbf5279d98f3abceb0a386c92b (rebuild is byte-identical)
+
+=== Phase 4: ECS: register task definition (role assigned explicitly), run task ===
+  registered arn:simaws:ecs:local:000000000000:task-definition/risk-service:1
+  taskRoleArn=arn:simaws:iam::000000000000:role/risk-service-task
+  NOT enforced by simaws (real-deployment shape only): bedrock:InvokeModel
+
+  -- run-task: negative checks first (each must be denied before anything runs) --
+  denied [policy missing logs permission]: DENY logs:CreateLogStream on arn:simaws:logs:local:000000000000:log-group:/simaws/risk-service: not granted by the attached policy
+  denied [public subnet placement]: network: subnet subnet-app-private is public or has an internet/NAT route
+  denied [second egress rule]: network: sg-risk-task has a world-open rule {'protocol': 'tcp', 'port': 443, 'cidr': '0.0.0.0/0'}
+  denied [image referenced by tag]: image must be referenced by sha256 digest, not by tag
+  denied [wrong egress port]: egress: endpoint port 443 is not the single allowed tcp/11434
+
+  -- run-task: the real task --
+  [enforce] role trust policy allows ecs-tasks.amazonaws.com only
+  [enforce] ALLOW ecr:GetAuthorizationToken on arn:simaws:ecr:local:000000000000:registry/default
+  [enforce] ALLOW ecr:BatchGetImage on arn:simaws:ecr:local:000000000000:repository/risk-service
+  [enforce] ALLOW ecr:GetDownloadUrlForLayer on arn:simaws:ecr:local:000000000000:repository/risk-service
+  [enforce] ALLOW logs:CreateLogStream on arn:simaws:logs:local:000000000000:log-group:/simaws/risk-service
+  [enforce] ALLOW logs:PutLogEvents on arn:simaws:logs:local:000000000000:log-group:/simaws/risk-service
+  [enforce] network placement ok: subnet-app-private / sg-risk-task
+  [enforce] egress: model endpoint port 11434 matches the single allowed rule
+  [enforce] image digest verified on pull: sha256:5727c2c535d3020ee98271c36d3877c732384edbf5279d98f3abceb0a386c92b
+
+=== Phase 5: task log from /simaws/risk-service (exit code 0) ===
+{
+  "target": "aws-sim",
+  "input_sha256": "5b5917e161317c2d96566ee61dbc347536bc18454801d7add33301b50759a121",
+  "endpoint": "http://host.docker.internal:11434",
+  "result": {
+    "factors": [
+      {
+        "name": "prior_claims",
+        "points": 30,
+        "detail": "Prior claims count is 6, which is 3 or more."
+      },
+      {
+        "name": "credit",
+        "points": 25,
+        "detail": "Credit band is 'd'."
+      },
+      {
+        "name": "coverage_income",
+        "points": 20,
+        "detail": "Coverage amount ($600,000) is more than 5 times stated income ($50,000)."
+      },
+      {
+        "name": "asset_age",
+        "points": 15,
+        "detail": "Asset age is 70 years, which is 30 or more."
+      }
+    ],
+    "score": 90,
+    "rationale": "The application has a high number of prior claims, a poor credit band, high coverage relative to income, and an old asset age, all of which contribute to a higher risk score."
+  },
+  "usage": {
+    "model": "qwen3:8b",
+    "model_calls": 1,
+    "input_tokens": 378,
+    "output_tokens": 228,
+    "duration_ms": 9408.0
+  }
+}
+
+result saved to /root/insurance-deployment/evidence/aws_result.json

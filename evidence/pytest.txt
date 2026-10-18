@@ -1,0 +1,53 @@
+== unit tests ==
+============================= test session starts ==============================
+platform linux -- Python 3.12.14, pytest-9.1.1, pluggy-1.7.0 -- /root/insurance-deployment/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /root/insurance-deployment
+configfile: pyproject.toml
+testpaths: tests
+plugins: anyio-4.15.1
+collecting ... collected 41 items
+
+tests/test_enforcement.py::test_authorize_allows_shipped_setup PASSED    [  2%]
+tests/test_enforcement.py::test_denied_without_logs_permission PASSED    [  4%]
+tests/test_enforcement.py::test_denied_without_pull_permission PASSED    [  7%]
+tests/test_enforcement.py::test_denied_wrong_resource PASSED             [  9%]
+tests/test_enforcement.py::test_denied_no_explicit_role PASSED           [ 12%]
+tests/test_enforcement.py::test_denied_unknown_digest_and_tag_reference PASSED [ 14%]
+tests/test_enforcement.py::test_denied_public_subnet_and_public_ip PASSED [ 17%]
+tests/test_enforcement.py::test_denied_wrong_egress_port PASSED          [ 19%]
+tests/test_enforcement.py::test_registry_digest_is_deterministic_and_verified PASSED [ 21%]
+tests/test_enforcement.py::test_is_allowed_exact_match PASSED            [ 24%]
+tests/test_enforcement.py::test_run_task_end_to_end_with_fake_ollama PASSED [ 26%]
+tests/test_iam.py::test_shipped_policy_passes_linter PASSED              [ 29%]
+tests/test_iam.py::test_every_statement_has_justification PASSED         [ 31%]
+tests/test_iam.py::test_linter_rejects[<lambda>-wildcard action0] PASSED [ 34%]
+tests/test_iam.py::test_linter_rejects[<lambda>-wildcard action1] PASSED [ 36%]
+tests/test_iam.py::test_linter_rejects[<lambda>-wildcard resource] PASSED [ 39%]
+tests/test_iam.py::test_linter_rejects[<lambda>-justification0] PASSED   [ 41%]
+tests/test_iam.py::test_linter_rejects[<lambda>-justification1] PASSED   [ 43%]
+tests/test_iam.py::test_linter_rejects[<lambda>-Effect must be Allow] PASSED [ 46%]
+tests/test_iam.py::test_linter_rejects[<lambda>-missing Sid] PASSED      [ 48%]
+tests/test_iam.py::test_linter_rejects[<lambda>-not an arn:simaws] PASSED [ 51%]
+tests/test_iam.py::test_put_role_policy_refuses_bad_policy PASSED        [ 53%]
+tests/test_iam.py::test_trust_policy_must_be_ecs_tasks PASSED            [ 56%]
+tests/test_network.py::test_shipped_network_passes PASSED                [ 58%]
+tests/test_network.py::test_rejects_public_subnet PASSED                 [ 60%]
+tests/test_network.py::test_rejects_nat_route PASSED                     [ 63%]
+tests/test_network.py::test_rejects_any_ingress PASSED                   [ 65%]
+tests/test_network.py::test_rejects_world_open PASSED                    [ 68%]
+tests/test_network.py::test_rejects_second_egress PASSED                 [ 70%]
+tests/test_network.py::test_rejects_wrong_port_or_dest PASSED            [ 73%]
+tests/test_network.py::test_model_sg_has_no_egress PASSED                [ 75%]
+tests/test_service.py::test_service_sums_points_in_code_and_reports_usage PASSED [ 78%]
+tests/test_service.py::test_service_repair_call_counts_tokens PASSED     [ 80%]
+tests/test_service.py::test_ollama_request_shape PASSED                  [ 82%]
+tests/test_service.py::test_ollama_error_mapping[exc0-LLMTimeoutError] PASSED [ 85%]
+tests/test_service.py::test_ollama_error_mapping[exc1-LLMTransientError] PASSED [ 87%]
+tests/test_service.py::test_ollama_404_is_model_not_found_and_preflight_missing PASSED [ 90%]
+tests/test_service.py::test_cli_requires_model_and_endpoint PASSED       [ 92%]
+tests/test_service.py::test_cli_end_to_end_with_fake_ollama PASSED       [ 95%]
+tests/test_service.py::test_reference_score_for_frozen_input PASSED      [ 97%]
+tests/test_service.py::test_agent_files_are_byte_identical_to_week8 SKIPPED [100%]
+
+======================== 40 passed, 1 skipped in 1.22s =========================

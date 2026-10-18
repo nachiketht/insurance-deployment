@@ -1,0 +1,43 @@
+{
+  "target": "onprem-sim",
+  "input_sha256": "5b5917e161317c2d96566ee61dbc347536bc18454801d7add33301b50759a121",
+  "endpoint": "http://host.docker.internal:11434",
+  "result": {
+    "factors": [
+      {
+        "name": "prior_claims",
+        "points": 30,
+        "detail": "prior_claims_count is 6, which is 3 or more"
+      },
+      {
+        "name": "credit",
+        "points": 25,
+        "detail": "credit_band is d"
+      },
+      {
+        "name": "coverage_income",
+        "points": 20,
+        "detail": "coverage_amount (600000) is more than 5 times stated_income (50000)"
+      },
+      {
+        "name": "asset_age",
+        "points": 15,
+        "detail": "asset_age_years is 70, which is 30 or more"
+      },
+      {
+        "name": "missing_data",
+        "points": 0,
+        "detail": "missing_fields is empty and credit_band is not no_hit"
+      }
+    ],
+    "score": 90,
+    "rationale": "prior_claims_count is 6 (30 points), credit_band is d (25 points), coverage_amount (600000) is more than 5 times stated_income (50000) (20 points), asset_age_years is 70 (15 points). missing_data is 0 because missing_fields is empty and credit_band is not no_hit."
+  },
+  "usage": {
+    "model": "qwen3:4b",
+    "model_calls": 1,
+    "input_tokens": 372,
+    "output_tokens": 305,
+    "duration_ms": 7261.4
+  }
+}

@@ -1,6 +1,3 @@
-#!/usr/bin/env bash
-# Usage: scripts/run_all_evidence.sh --cloud-model <id> --onprem-model <id> [--endpoint URL]
-# Model ids must be exactly as shown by `ollama list`. Needs Python 3.11+ and a running Ollama.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 CLOUD=""; ONPREM=""; ENDPOINT="http://127.0.0.1:11434"

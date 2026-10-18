@@ -1,0 +1,73 @@
+$ python -m simaws iam get-role --name risk-service-task --state .simaws/state.json
+{
+  "_simulated": "simaws local IAM, not AWS",
+  "Role": {
+    "Arn": "arn:simaws:iam::000000000000:role/risk-service-task",
+    "AssumeRolePolicyDocument": {
+      "Statement": [
+        {
+          "Action": "sts:AssumeRole",
+          "Effect": "Allow",
+          "Principal": {
+            "Service": "ecs-tasks.amazonaws.com"
+          }
+        }
+      ],
+      "Version": "2012-10-17"
+    },
+    "AttachedPolicies": {
+      "risk-service-least-privilege": {
+        "Statement": [
+          {
+            "Action": [
+              "ecr:GetAuthorizationToken"
+            ],
+            "Effect": "Allow",
+            "Resource": [
+              "arn:simaws:ecr:local:000000000000:registry/default"
+            ],
+            "Sid": "EcrAuthToken",
+            "justification": "needed to authenticate the image pull. Real AWS only accepts Resource * for this action; simaws scopes it to the one registry, and a real deployment would carry that single documented exception."
+          },
+          {
+            "Action": [
+              "ecr:BatchGetImage",
+              "ecr:GetDownloadUrlForLayer"
+            ],
+            "Effect": "Allow",
+            "Resource": [
+              "arn:simaws:ecr:local:000000000000:repository/risk-service"
+            ],
+            "Sid": "PullOwnImageOnly",
+            "justification": "read-only pull of this service's own repository so the task can start; no push, no other repository, so a compromised task cannot tamper with or read other images"
+          },
+          {
+            "Action": [
+              "logs:CreateLogStream",
+              "logs:PutLogEvents"
+            ],
+            "Effect": "Allow",
+            "Resource": [
+              "arn:simaws:logs:local:000000000000:log-group:/simaws/risk-service"
+            ],
+            "Sid": "WriteOwnLogs",
+            "justification": "append-only output to its own log group so each run is auditable; no read or delete, so the task cannot erase its trail"
+          },
+          {
+            "Action": [
+              "bedrock:InvokeModel"
+            ],
+            "Effect": "Allow",
+            "Resource": [
+              "arn:simaws:bedrock:local::foundation-model/managed-endpoint-standin"
+            ],
+            "Sid": "InvokeManagedModel",
+            "justification": "REAL-DEPLOYMENT SHAPE, NOT ENFORCED BY THE SIMULATOR: the task calls one named model and nothing else; no ListFoundationModels, no model management, no wildcard model"
+          }
+        ],
+        "Version": "2012-10-17"
+      }
+    },
+    "RoleName": "risk-service-task"
+  }
+}

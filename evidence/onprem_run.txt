@@ -1,0 +1,63 @@
+SIMULATED ON-PREM: a local process plays 'our own data center'. The model runs on a local Ollama server; nothing leaves this machine.
+on-prem-model=qwen3:4b endpoint=http://host.docker.internal:11434
+input: /root/insurance-deployment/deploy/input/test_input.json
+input sha256: 5b5917e161317c2d96566ee61dbc347536bc18454801d7add33301b50759a121
+
+=== Phase 1: boundary check (air-gap posture) ===
+  endpoint host host.docker.internal is loopback/private: model calls stay inside the boundary
+  proxy variables set: none
+
+=== Phase 2: Ollama preflight ===
+  model qwen3:4b is installed at http://host.docker.internal:11434
+  warm-up (model load): 1.34 s
+
+=== Phase 3: same agent code as the AWS target (byte-identical) ===
+  sha256 5990fce992a303ad9027e9c70ee6d22349172e61b11c9c75f76d21e76cd9abf2  src/underwriting/agents/risk.py
+  sha256 eba9ee27b5766c6caeeb9ded858989d99b802f5f69fdcf725957cfcc85f0da70  src/underwriting/agents/_base.py
+  sha256 f6076f3fd66fc34fe3c7eb9153d3bb0b1a3b122a488e5bc62ed9ee8e44bde47c  src/underwriting/llm.py
+  sha256 d02c54f3cf6a4d9d981e9db75d13386604ddc1fead3cff7dbbbdd945e692207c  src/underwriting/models.py
+
+=== Phase 4: run the risk service on the test input ===
+{
+  "target": "onprem-sim",
+  "input_sha256": "5b5917e161317c2d96566ee61dbc347536bc18454801d7add33301b50759a121",
+  "endpoint": "http://host.docker.internal:11434",
+  "result": {
+    "factors": [
+      {
+        "name": "prior_claims",
+        "points": 30,
+        "detail": "prior_claims_count is 6, which is 3 or more"
+      },
+      {
+        "name": "credit",
+        "points": 25,
+        "detail": "credit_band is d"
+      },
+      {
+        "name": "coverage_income",
+        "points": 20,
+        "detail": "coverage_amount (600000) is more than 5 times stated_income (50000)"
+      },
+      {
+        "name": "asset_age",
+        "points": 15,
+        "detail": "asset_age_years is 70, which is 30 or more"
+      },
+      {
+        "name": "missing_data",
+        "points": 0,
+        "detail": "missing_fields is empty and credit_band is not no_hit"
+      }
+    ],
+    "score": 90,
+    "rationale": "prior_claims_count is 6 (30 points), credit_band is d (25 points), coverage_amount (600000) is more than 5 times stated_income (50000) (20 points), asset_age_years is 70 (15 points). missing_data is 0 because missing_fields is empty and credit_band is not no_hit."
+  },
+  "usage": {
+    "model": "qwen3:4b",
+    "model_calls": 1,
+    "input_tokens": 372,
+    "output_tokens": 305,
+    "duration_ms": 7261.4
+  }
+}

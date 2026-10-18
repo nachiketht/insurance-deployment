@@ -1,0 +1,12 @@
+Measured comparison (values copied from evidence/aws_result.json and evidence/onprem_result.json)
+
+same input sha256: True (5b5917e161317c2d96566ee61dbc347536bc18454801d7add33301b50759a121)
+reference (from the prompt's rules): score 90, factors {'prior_claims': 30, 'credit': 25, 'coverage_income': 20, 'asset_age': 15}
+
+target      model                  score  calls  in_tok  out_tok        ms  matches_reference
+aws-sim     qwen3:8b                  90      1     378      228    9408.0  True
+onprem-sim  qwen3:4b                  90      1     372      305    7261.4  True
+
+scores equal across targets: True
+aws-sim rationale: The application has a high number of prior claims, a poor credit band, high coverage relative to income, and an old asset age, all of which contribute to a higher risk score.
+onprem-sim rationale: prior_claims_count is 6 (30 points), credit_band is d (25 points), coverage_amount (600000) is more than 5 times stated_income (50000) (20 points), asset_age_years is 70 (15 points). missing_data is 0 because missing_fields is empty and credit_band is not no_hit.
