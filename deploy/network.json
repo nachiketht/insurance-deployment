@@ -1,0 +1,25 @@
+{
+  "_note": "SIMULATED VPC description (simaws). No real AWS resources exist.",
+  "vpc": {"id": "vpc-sim-0001", "cidr": "10.0.0.0/16"},
+  "subnets": [
+    {"id": "subnet-app-private", "cidr": "10.0.1.0/24", "public": false,
+     "internet_gateway_route": false, "nat_route": false,
+     "purpose": "Fargate task running the risk service"},
+    {"id": "subnet-model-private", "cidr": "10.0.2.0/24", "public": false,
+     "internet_gateway_route": false, "nat_route": false,
+     "purpose": "Model endpoint stand-in (Ollama), reachable only from the app subnet"}
+  ],
+  "security_groups": [
+    {"id": "sg-risk-task", "description": "risk service task",
+     "ingress": [],
+     "egress": [{"protocol": "tcp", "port": 11434, "cidr": "10.0.2.0/24",
+                 "why": "the only thing the task talks to: the model endpoint"}]},
+    {"id": "sg-model-endpoint", "description": "model endpoint",
+     "ingress": [{"protocol": "tcp", "port": 11434, "source_sg": "sg-risk-task",
+                  "why": "accept model calls only from the risk task"}],
+     "egress": []}
+  ],
+  "model_subnet": "subnet-model-private",
+  "model_sg": "sg-model-endpoint",
+  "model_port": 11434
+}

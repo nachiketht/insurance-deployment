@@ -1,0 +1,33 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "EcrAuthToken",
+      "Effect": "Allow",
+      "Action": ["ecr:GetAuthorizationToken"],
+      "Resource": ["arn:simaws:ecr:local:000000000000:registry/default"],
+      "justification": "needed to authenticate the image pull. Real AWS only accepts Resource * for this action; simaws scopes it to the one registry, and a real deployment would carry that single documented exception."
+    },
+    {
+      "Sid": "PullOwnImageOnly",
+      "Effect": "Allow",
+      "Action": ["ecr:BatchGetImage", "ecr:GetDownloadUrlForLayer"],
+      "Resource": ["arn:simaws:ecr:local:000000000000:repository/risk-service"],
+      "justification": "read-only pull of this service's own repository so the task can start; no push, no other repository, so a compromised task cannot tamper with or read other images"
+    },
+    {
+      "Sid": "WriteOwnLogs",
+      "Effect": "Allow",
+      "Action": ["logs:CreateLogStream", "logs:PutLogEvents"],
+      "Resource": ["arn:simaws:logs:local:000000000000:log-group:/simaws/risk-service"],
+      "justification": "append-only output to its own log group so each run is auditable; no read or delete, so the task cannot erase its trail"
+    },
+    {
+      "Sid": "InvokeManagedModel",
+      "Effect": "Allow",
+      "Action": ["bedrock:InvokeModel"],
+      "Resource": ["arn:simaws:bedrock:local::foundation-model/managed-endpoint-standin"],
+      "justification": "REAL-DEPLOYMENT SHAPE, NOT ENFORCED BY THE SIMULATOR: the task calls one named model and nothing else; no ListFoundationModels, no model management, no wildcard model"
+    }
+  ]
+}

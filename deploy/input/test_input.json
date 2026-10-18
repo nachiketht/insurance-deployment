@@ -1,0 +1,23 @@
+{
+  "intake": {
+    "applicant_id": "A-200",
+    "applicant_name": "Grace Hopper",
+    "date_of_birth": "1970-01-01",
+    "address": "1 Compiler Way",
+    "product": "home",
+    "coverage_amount": 600000,
+    "stated_income": 50000,
+    "claims_history_text": "three water claims in two years",
+    "missing_fields": []
+  },
+  "enrichment": {
+    "credit_band": "d",
+    "prior_claims_count": 6,
+    "asset_age_years": 70,
+    "flags": [
+      "weak_credit",
+      "high_claims_frequency"
+    ],
+    "notes": "Flags: weak_credit, high_claims_frequency"
+  }
+}
